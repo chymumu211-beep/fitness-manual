@@ -241,7 +241,7 @@
 <div class="wrap">
   <div class="tabs" id="tabs"></div>
   <div class="toolbar">
-    <button class="search-btn" onclick="openSearch()">🔍 搜索动作（联网）</button>
+    <button class="search-btn" onclick="openSearch()">🔍 搜索动作</button>
     <button onclick="exportData()">⬇ 导出备份</button>
     <button onclick="document.getElementById('importFile').click()">⬆ 导入备份</button>
     <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)">
@@ -328,7 +328,6 @@
     <div class="search-hint" id="searchHint"></div>
     <div class="res-list" id="resList"></div>
     <div class="disclaimer">
-      📡 真人示范图与肌群来自开放动作库 <b>free-exercise-db</b>（断网时自动只用本地动作库）。
       ⚠️ 建议重量为<b>新手/进阶参考区间</b>，不是医嘱——实际重量以你能<b>标准完成、最后 2 次略吃力</b>为准，循序渐进、量力而行。
     </div>
     <div class="modal-actions" style="margin-top:14px">
@@ -820,67 +819,10 @@ function doSearch(){
   hint.className="search-hint";
   const local=localSearch(term);
   renderResults(local,[]);
-  if(!term){hint.textContent=`本地动作库共 ${KB.length} 个动作`;return;}
-  hint.textContent=local.length?`本地匹配 ${local.length} 个，正在联网获取真人示范图…`:"正在联网搜索动作…";
-  fetchOnline(term,local).then(res=>{
-    if(res===null){
-      hint.textContent=local.length
-        ? `本地匹配 ${local.length} 个（示范图暂时取不到，已显示本地结果）`
-        : "暂时取不到联网结果，换个关键词或稍后再试～";
-      return;
-    }
-    res.localImgs.forEach(([name,img])=>{const m=local.find(l=>l.name===name);if(m&&img)m._img=img;});
-    renderResults(local,res.extra);
-    hint.textContent=`本地 ${local.length} 个 + 联网 ${res.extra.length} 个结果`;
-  });
+  if(!term){hint.textContent=`动作库共 ${KB.length} 个动作`;return;}
+  hint.textContent=local.length?`找到 ${local.length} 个动作`:"没有匹配的动作，换个关键词试试～";
 }
 
-/* 联网数据源：free-exercise-db（jsDelivr CDN 静态 JSON，含真人示范图，CORS 开放、稳定） */
-const EXDB_IMG="https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/";
-let EXDB=null,EXDB_LOADING=null;
-function loadExDB(){
-  if(EXDB)return Promise.resolve(EXDB);
-  if(EXDB_LOADING)return EXDB_LOADING;
-  EXDB_LOADING=fetch("https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/dist/exercises.json")
-    .then(r=>r.ok?r.json():null).then(j=>{EXDB=j;return j;}).catch(()=>null);
-  return EXDB_LOADING;
-}
-function exImg(x){return (x.images&&x.images.length)?EXDB_IMG+x.images[0]:null;}
-const MUS_ZONE={quadriceps:"lower",hamstrings:"lower",glutes:"lower",calves:"lower",adductors:"lower",abductors:"lower",abdominals:"core",chest:"upper",lats:"upper","middle back":"upper",traps:"upper",neck:"upper",shoulders:"upper",biceps:"upper",triceps:"upper",forearms:"upper","lower back":"lower"};
-const MUS_CN={quadriceps:"股四头肌",hamstrings:"腘绳肌",glutes:"臀大肌",calves:"小腿",adductors:"大腿内收肌",abductors:"髋外展肌",abdominals:"腹肌",chest:"胸肌",lats:"背阔肌","middle back":"中背",traps:"斜方肌",neck:"颈部",shoulders:"肩部",biceps:"肱二头肌",triceps:"肱三头肌",forearms:"前臂","lower back":"下背"};
-function exZone(x){return MUS_ZONE[(x.primaryMuscles||[])[0]]||"upper";}
-
-async function fetchOnline(term,local){
-  const db=await loadExDB();
-  if(!db)return null;
-  const t=term.toLowerCase();
-  // 关键词：英文输入直接用；中文输入则借本地命中项的英文名拆词，联到英文动作库
-  const kws=new Set();
-  if(/[a-z]/.test(t)) t.split(/\s+/).forEach(w=>{if(w.length>=3)kws.add(w);});
-  local.forEach(l=>l.en.split(/\s+/).forEach(w=>{if(w.length>=4)kws.add(w.toLowerCase());}));
-  if(!kws.size)return {localImgs:[],extra:[]};
-  const arr=[...kws];
-  const matches=db.filter(x=>{const n=x.name.toLowerCase();return arr.some(k=>n.includes(k));});
-  // 1) 给本地结果配真人示范图
-  const localImgs=[];
-  local.forEach(l=>{
-    const key=(l.en.split(/\s+/).filter(w=>w.length>=4).pop()||l.en).toLowerCase();
-    const hit=matches.find(x=>x.name.toLowerCase().includes(key)&&exImg(x));
-    if(hit)localImgs.push([l.name,exImg(hit)]);
-  });
-  // 2) 联网独有结果（优先有图、去重）
-  const seen=new Set();
-  const extra=matches.filter(x=>exImg(x)).filter(x=>{const n=x.name.toLowerCase();if(seen.has(n))return false;seen.add(n);return true;}).slice(0,8)
-    .map(x=>{
-      const zone=exZone(x),tips=zoneTips(zone);
-      const mus=(x.primaryMuscles||[]).map(m=>MUS_CN[m]||m).join("、");
-      const part=(tips.target.split(" · ")[1])||tips.target;
-      return {name:x.name,zone,img:exImg(x),
-        target:(mus?`主要肌群：${mus} · `:"")+part,
-        weight:tips.weight, notes:tips.notes};
-    });
-  return {localImgs,extra};
-}
 
 /* 按部位生成通用中文指导（用于联网结果） */
 function zoneTips(zone){
