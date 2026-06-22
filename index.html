@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="健身手册">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0e1116">
+<title>我的健身手册</title>
+<style>
+  :root{
+    --bg:#0e1116;
+    --panel:#161b22;
+    --panel-2:#1c232d;
+    --line:#2a323d;
+    --text:#e6edf3;
+    --muted:#8b949e;
+    --accent:#f0883e;
+    --accent-2:#3fb950;
+    --blue:#58a6ff;
+    --pink:#db61a2;
+    --danger:#f85149;
+    --radius:16px;
+    --shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%,#1d2430 0,var(--bg) 60%);
+    color:var(--text);min-height:100vh;
+  }
+  header{
+    padding:30px 24px 14px;max-width:1200px;margin:0 auto;
+    display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;
+  }
+  header h1{margin:0;font-size:28px;letter-spacing:1px;display:flex;align-items:center;gap:12px}
+  header .sub{color:var(--muted);font-size:13px;margin-top:6px}
+  .stats{display:flex;gap:10px;flex-wrap:wrap}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 14px;text-align:center;min-width:78px}
+  .stat b{display:block;font-size:20px;color:var(--accent)}
+  .stat span{font-size:11px;color:var(--muted)}
+
+  .wrap{max-width:1200px;margin:0 auto;padding:8px 24px 80px}
+  .tabs{display:flex;gap:8px;margin:10px 0 22px;flex-wrap:wrap}
+  .tab{
+    cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--text);
+    padding:10px 20px;border-radius:999px;font-size:15px;font-weight:600;transition:.18s;display:flex;align-items:center;gap:8px;
+  }
+  .tab:hover{border-color:var(--accent)}
+  .tab.active{background:linear-gradient(135deg,var(--accent),#d96a25);border-color:transparent;color:#1a1206}
+  .tab .cnt{font-size:12px;background:rgba(255,255,255,.18);border-radius:999px;padding:1px 8px}
+  .tab.active .cnt{background:rgba(0,0,0,.18)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
+    display:flex;flex-direction:column;transition:.18s;position:relative;
+  }
+  .card:hover{transform:translateY(-3px);border-color:#3a4452;box-shadow:var(--shadow)}
+  .thumb{
+    height:160px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;
+    position:relative;overflow:hidden;cursor:pointer;
+  }
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb svg{width:90px;height:90px}
+  .thumb .upload-hint{
+    position:absolute;inset:0;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;
+    opacity:0;transition:.18s;font-size:13px;gap:6px;
+  }
+  .thumb:hover .upload-hint{opacity:1}
+  .card-body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
+  .card-title{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .card-title h3{margin:0;font-size:17px}
+  .weight{
+    background:rgba(63,185,80,.14);color:var(--accent-2);border:1px solid rgba(63,185,80,.3);
+    padding:3px 10px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap;
+  }
+  .target{
+    background:rgba(219,97,162,.14);color:var(--pink);border:1px solid rgba(219,97,162,.3);
+    padding:5px 10px;border-radius:9px;font-size:12px;line-height:1.5;
+  }
+  .target b{color:#f0a8cf}
+  .notes{font-size:13px;color:var(--muted);line-height:1.6;flex:1}
+  .notes .label{color:var(--accent);font-weight:600;font-size:12px;display:block;margin-bottom:2px}
+  .last-log{font-size:12px;color:var(--blue);background:rgba(88,166,255,.1);border-radius:8px;padding:5px 9px;display:flex;align-items:center;gap:6px}
+  .card-actions{display:flex;gap:8px;margin-top:4px}
+  .card-actions button{
+    flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
+    padding:7px;border-radius:9px;cursor:pointer;font-size:13px;transition:.15s;
+  }
+  .card-actions button:hover{color:var(--text);border-color:#475061}
+  .card-actions .log:hover{color:var(--blue);border-color:var(--blue)}
+  .card-actions .del:hover{color:var(--danger);border-color:var(--danger)}
+
+  .add-card{
+    border:2px dashed var(--line);border-radius:var(--radius);background:transparent;color:var(--muted);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;
+    min-height:300px;transition:.18s;font-size:15px;
+  }
+  .add-card:hover{border-color:var(--accent);color:var(--accent)}
+  .add-card .plus{font-size:42px;line-height:1}
+
+  /* modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  .overlay.show{display:flex}
+  .modal{
+    background:var(--panel);border:1px solid var(--line);border-radius:20px;width:100%;max-width:480px;
+    padding:24px;box-shadow:var(--shadow);max-height:92vh;overflow:auto;
+  }
+  .modal h2{margin:0 0 18px;font-size:20px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .field input,.field textarea,.field select{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    padding:11px 12px;border-radius:10px;font-size:14px;font-family:inherit;
+  }
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--accent)}
+  .field textarea{resize:vertical;min-height:70px;line-height:1.6}
+  .preview-box{
+    height:140px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px;position:relative;
+  }
+  .preview-box img{width:100%;height:100%;object-fit:cover}
+  .preview-box svg{width:80px;height:80px}
+  .img-btns{display:flex;gap:8px}
+  .img-btns label,.img-btns button{
+    flex:1;text-align:center;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    padding:9px;border-radius:9px;cursor:pointer;font-size:13px;
+  }
+  .img-btns label:hover,.img-btns button:hover{border-color:var(--accent)}
+  .modal-actions{display:flex;gap:10px;margin-top:8px}
+  .modal-actions button{flex:1;padding:12px;border-radius:11px;border:none;cursor:pointer;font-size:15px;font-weight:600}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),#d96a25);color:#1a1206}
+  .btn-ghost{background:var(--panel-2);color:var(--muted);border:1px solid var(--line)!important}
+  .matched-tip{font-size:12px;color:var(--accent-2);margin-top:6px;min-height:16px}
+  .toolbar{display:flex;justify-content:flex-end;margin-bottom:14px;gap:10px}
+  .toolbar button{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:8px 14px;border-radius:10px;cursor:pointer;font-size:13px}
+  .toolbar button:hover{color:var(--text);border-color:var(--accent)}
+  .toolbar .search-btn{background:linear-gradient(135deg,var(--blue),#3a7fd0);color:#06121f;border-color:transparent;font-weight:700}
+
+  /* 搜索弹窗 */
+  .modal.wide{max-width:680px}
+  .search-bar{display:flex;gap:8px;margin-bottom:6px}
+  .search-bar input{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:12px 14px;border-radius:11px;font-size:15px}
+  .search-bar input:focus{outline:none;border-color:var(--blue)}
+  .search-bar button{background:linear-gradient(135deg,var(--blue),#3a7fd0);color:#06121f;border:none;padding:0 20px;border-radius:11px;cursor:pointer;font-weight:700;font-size:15px}
+  .search-hint{font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px}
+  .search-hint.err{color:var(--danger)}
+  .quick-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .quick-tags span{background:var(--panel-2);border:1px solid var(--line);color:var(--muted);font-size:12px;padding:4px 11px;border-radius:999px;cursor:pointer}
+  .quick-tags span:hover{border-color:var(--blue);color:var(--text)}
+  .res-list{display:flex;flex-direction:column;gap:12px;max-height:56vh;overflow:auto;padding-right:4px}
+  .res{display:flex;gap:12px;background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:12px;align-items:flex-start}
+  .res .ricon{width:74px;height:74px;flex-shrink:0;background:#0e1116;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .res .ricon img{width:100%;height:100%;object-fit:cover}
+  .res .ricon svg{width:48px;height:48px}
+  .res .rbody{flex:1;min-width:0}
+  .res .rtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}
+  .res .rtop h4{margin:0;font-size:16px}
+  .res .zb{font-size:11px;padding:2px 9px;border-radius:999px;background:rgba(240,136,62,.15);color:var(--accent);border:1px solid rgba(240,136,62,.3)}
+  .res .src{font-size:10px;color:var(--muted);border:1px solid var(--line);padding:1px 7px;border-radius:999px}
+  .res .src.online{color:var(--blue);border-color:rgba(88,166,255,.4)}
+  .res .rt{font-size:12px;color:var(--pink);margin:3px 0}
+  .res .rw{font-size:12px;color:var(--accent-2);margin:3px 0}
+  .res .rn{font-size:12px;color:var(--muted);line-height:1.55}
+  .res .radd{align-self:center;background:linear-gradient(135deg,var(--accent),#d96a25);color:#1a1206;border:none;padding:9px 14px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;flex-shrink:0;white-space:nowrap}
+  .res .radd:hover{filter:brightness(1.08)}
+  .disclaimer{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.5;border-top:1px solid var(--line);padding-top:10px}
+
+  /* history */
+  .log-row{display:flex;gap:8px;margin-bottom:10px}
+  .log-row input{flex:1}
+  .log-row .date{flex:1.2}
+  .chart{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px 10px 6px;margin-bottom:14px}
+  .chart .empty{color:var(--muted);text-align:center;font-size:13px;padding:24px 0}
+  .hist-list{list-style:none;margin:0;padding:0;max-height:240px;overflow:auto}
+  .hist-list li{
+    display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:13px;
+  }
+  .hist-list li .hd{color:var(--muted);width:90px;flex-shrink:0}
+  .hist-list li .hw{color:var(--accent-2);font-weight:700;width:70px;flex-shrink:0}
+  .hist-list li .hn{color:var(--muted);flex:1}
+  .hist-list li .hx{color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:6px}
+  .hist-list li .hx:hover{color:var(--danger);background:rgba(248,81,73,.1)}
+  .pr-badge{font-size:11px;background:rgba(240,136,62,.18);color:var(--accent);padding:1px 6px;border-radius:6px;margin-left:6px}
+  /* ---- 手机端 ---- */
+  @media(max-width:640px){
+    body{-webkit-text-size-adjust:100%}
+    header{padding:max(18px,env(safe-area-inset-top)) 16px 10px;flex-direction:column;align-items:stretch;gap:12px}
+    header h1{font-size:21px}
+    header .sub{font-size:12px}
+    .stats{gap:8px}
+    .stat{flex:1;min-width:0;padding:7px 6px}
+    .stat b{font-size:17px}
+    .wrap{padding:6px 14px calc(60px + env(safe-area-inset-bottom))}
+    .tabs{gap:6px;margin:6px 0 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;flex-wrap:nowrap}
+    .tab{padding:9px 15px;font-size:14px;white-space:nowrap;flex-shrink:0}
+    .toolbar{flex-wrap:wrap;gap:8px}
+    .toolbar button{flex:1;min-width:46%;padding:10px;font-size:13px}
+    .toolbar .search-btn{min-width:100%}
+    .grid{grid-template-columns:1fr;gap:14px}
+    .thumb{height:170px}
+    .card-actions button{padding:10px 6px;font-size:13px}
+
+    .overlay{padding:0;align-items:flex-end}
+    .modal,.modal.wide{max-width:100%;width:100%;border-radius:20px 20px 0 0;max-height:94vh;padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
+    .modal h2{font-size:18px}
+    .field input,.field textarea,.field select{font-size:16px}      /* ≥16px 防 iOS 自动放大 */
+    .search-bar input{font-size:16px}
+
+    .res{flex-wrap:wrap}
+    .res .ricon{width:60px;height:60px}
+    .res .rbody{flex:1 1 60%}
+    .res .radd{width:100%;align-self:stretch;margin-top:4px;padding:11px}
+    .res-list{max-height:60vh}
+
+    .log-row{flex-direction:column}
+    .hist-list{max-height:38vh}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🏋️ 我的健身手册</h1>
+    <div class="sub">分区记录 · 重量追踪 · 训练历史曲线 · 数据存在本地浏览器</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b id="stat-total">0</b><span>动作总数</span></div>
+    <div class="stat"><b id="stat-upper">0</b><span>上肢</span></div>
+    <div class="stat"><b id="stat-core">0</b><span>核心</span></div>
+    <div class="stat"><b id="stat-lower">0</b><span>下肢</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs" id="tabs"></div>
+  <div class="toolbar">
+    <button class="search-btn" onclick="openSearch()">🔍 搜索动作（联网）</button>
+    <button onclick="exportData()">⬇ 导出备份</button>
+    <button onclick="document.getElementById('importFile').click()">⬆ 导入备份</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)">
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- 编辑动作 Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">添加动作</h2>
+    <div class="field">
+      <label>所属分区</label>
+      <select id="f-zone">
+        <option value="upper">上肢</option>
+        <option value="core">核心</option>
+        <option value="lower">下肢</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>动作名称</label>
+      <input id="f-name" placeholder="例如：哑铃推胸 / 硬拉 / 保加利亚蹲" oninput="onNameInput()">
+      <div class="matched-tip" id="matchTip"></div>
+    </div>
+    <div class="field">
+      <label>训练重量 / 强度</label>
+      <input id="f-weight" placeholder="例如：40kg × 4组×8次 / 自重">
+    </div>
+    <div class="field">
+      <label>练哪里 · 哪里发力</label>
+      <input id="f-target" placeholder="例如：臀大肌 · 臀部顶髋发力">
+    </div>
+    <div class="field">
+      <label>动作要点 / 注意事项</label>
+      <textarea id="f-notes" placeholder="例如：收紧核心、顶髋夹臀、膝盖对准脚尖…"></textarea>
+    </div>
+    <div class="field">
+      <label>配图（自动匹配，可上传覆盖）</label>
+      <div class="preview-box" id="previewBox"></div>
+      <div class="img-btns">
+        <label>📷 上传图片<input type="file" accept="image/*" style="display:none" onchange="onUpload(event)"></label>
+        <button onclick="resetImg()">↺ 用自动配图</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">取消</button>
+      <button class="btn-primary" onclick="saveExercise()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 训练历史 Modal -->
+<div class="overlay" id="histOverlay">
+  <div class="modal">
+    <h2 id="histTitle">训练历史</h2>
+    <div class="chart" id="chart"></div>
+    <div class="field" style="margin-bottom:10px">
+      <label>记录一次训练</label>
+      <div class="log-row">
+        <input type="date" class="date" id="log-date">
+        <input id="log-weight" placeholder="重量(kg)" inputmode="decimal">
+      </div>
+      <div class="log-row">
+        <input id="log-note" placeholder="备注：组数×次数 / 感受（选填）">
+      </div>
+      <button class="btn-primary" style="width:100%;padding:11px;border:none;border-radius:10px;cursor:pointer;font-weight:600" onclick="addLog()">＋ 添加记录</button>
+    </div>
+    <ul class="hist-list" id="histList"></ul>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-ghost" onclick="closeHist()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 搜索动作 Modal -->
+<div class="overlay" id="searchOverlay">
+  <div class="modal wide">
+    <h2>🔍 搜索训练动作</h2>
+    <div class="search-bar">
+      <input id="searchInput" placeholder="输入动作 / 部位，如：卧推、臀、深蹲、bench、glute…" onkeydown="if(event.key==='Enter')doSearch()">
+      <button onclick="doSearch()">搜索</button>
+    </div>
+    <div class="quick-tags" id="quickTags"></div>
+    <div class="search-hint" id="searchHint"></div>
+    <div class="res-list" id="resList"></div>
+    <div class="disclaimer">
+      📡 在线示范图与肌群来自开放动作库 <b>wger.de</b>（断网时自动只用本地动作库）。
+      ⚠️ 建议重量为<b>新手/进阶参考区间</b>，不是医嘱——实际重量以你能<b>标准完成、最后 2 次略吃力</b>为准，循序渐进、量力而行。
+    </div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn-ghost" onclick="closeSearch()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- 内置 SVG 插图库 ---------- */
+const ICONS = {
+  bench:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round"><circle cx="15" cy="50" r="8"/><circle cx="85" cy="50" r="8"/><line x1="23" y1="50" x2="77" y2="50"/><rect x="38" y="62" width="24" height="6" rx="3" fill="#f0883e" stroke="none"/><line x1="50" y1="50" x2="50" y2="62"/></svg>`,
+  dumbbell:`<svg viewBox="0 0 100 100" fill="#f0883e" stroke="#f0883e" stroke-width="4" stroke-linecap="round"><rect x="10" y="35" width="12" height="30" rx="3"/><rect x="78" y="35" width="12" height="30" rx="3"/><rect x="22" y="42" width="8" height="16" rx="2"/><rect x="70" y="42" width="8" height="16" rx="2"/><line x1="30" y1="50" x2="70" y2="50" stroke-width="6"/></svg>`,
+  pullup:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="15" y1="20" x2="85" y2="20"/><circle cx="50" cy="34" r="7"/><path d="M38 24 L38 20 M62 24 L62 20"/><path d="M50 41 L50 62 M50 48 L38 26 M50 48 L62 26 M50 62 L40 80 M50 62 L60 80"/></svg>`,
+  row:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="30" cy="30" r="7"/><path d="M30 37 Q44 44 40 60 M30 40 L72 52 M72 52 L78 40 M40 60 L32 80 M40 60 L52 78"/><rect x="68" y="36" width="6" height="20" rx="3" fill="#f0883e" stroke="none"/></svg>`,
+  shoulder:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="26" r="8"/><path d="M50 34 L50 60 M50 44 L26 30 M50 44 L74 30 M50 60 L40 84 M50 60 L60 84"/><circle cx="22" cy="28" r="5" fill="#f0883e"/><circle cx="78" cy="28" r="5" fill="#f0883e"/></svg>`,
+  biceps:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M30 75 Q28 45 42 40 Q58 36 60 25"/><path d="M42 40 Q52 50 50 70" /><circle cx="62" cy="20" r="7" fill="#f0883e"/><path d="M55 78 L72 78"/></svg>`,
+  crunch:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="30" cy="40" r="7"/><path d="M30 47 Q45 52 55 42 M55 42 L78 42 M55 42 Q66 50 78 60 M37 44 L30 70 M40 50 L52 70"/></svg>`,
+  plank:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="22" cy="42" r="7"/><line x1="28" y1="46" x2="80" y2="58"/><line x1="22" y1="49" x2="22" y2="72"/><line x1="80" y1="58" x2="80" y2="72"/><line x1="22" y1="72" x2="80" y2="72"/></svg>`,
+  abs:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round"><rect x="34" y="22" width="32" height="56" rx="12"/><line x1="50" y1="30" x2="50" y2="70"/><line x1="36" y1="40" x2="64" y2="40"/><line x1="36" y1="52" x2="64" y2="52"/><line x1="36" y1="64" x2="64" y2="64"/></svg>`,
+  squat:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="30" x2="80" y2="30"/><circle cx="50" cy="40" r="7"/><path d="M50 47 L50 60 M38 30 L42 48 M62 30 L58 48 M50 60 L36 70 L36 84 M50 60 L64 70 L64 84"/></svg>`,
+  deadlift:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="48" cy="22" r="7"/><path d="M48 29 Q44 42 38 48 M48 29 Q56 40 56 52 M38 48 L30 70 M56 52 L60 70 M40 50 L40 74 M40 74 L26 74 M40 74 L54 74"/></svg>`,
+  glute:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 70 L20 50 M20 50 L42 50 M42 50 Q56 50 56 64 L56 78"/><circle cx="20" cy="44" r="3" fill="#f0883e"/><path d="M42 50 Q34 60 30 78"/><line x1="52" y1="78" x2="60" y2="78"/></svg>`,
+  lunge:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="46" cy="22" r="7"/><path d="M46 29 L46 52 M46 52 L30 64 L30 80 M46 52 L66 60 L70 80 M40 36 L30 46 M52 36 L64 44"/></svg>`,
+  leg:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M40 20 L40 50 L62 50 L62 78"/><circle cx="40" cy="20" r="3" fill="#f0883e"/><rect x="56" y="74" width="22" height="8" rx="4" fill="#f0883e" stroke="none"/><path d="M40 50 Q30 60 34 78"/></svg>`,
+  running:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="58" cy="22" r="7"/><path d="M58 29 L48 46 L62 50 L74 44 M48 46 L34 44 M48 46 L42 64 L48 80 M48 56 L66 64 L62 82"/></svg>`,
+  dumbbellFly:`<svg viewBox="0 0 100 100" fill="none" stroke="#f0883e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="26" r="7"/><path d="M50 33 L50 60 M50 40 L24 34 M50 40 L76 34 M50 60 L40 82 M50 60 L60 82"/><circle cx="20" cy="33" r="5" fill="#f0883e"/><circle cx="80" cy="33" r="5" fill="#f0883e"/></svg>`,
+  generic:`<svg viewBox="0 0 100 100" fill="#f0883e"><path d="M30 35 h8 v30 h-8 z M62 35 h8 v30 h-8 z M22 42 h6 v16 h-6 z M72 42 h6 v16 h-6 z" stroke="none"/><rect x="38" y="46" width="24" height="8" rx="3"/></svg>`
+};
+
+const MATCH = [
+  {kw:["飞鸟","夹胸","fly"], icon:"dumbbellFly", zone:"upper"},
+  {kw:["推胸","卧推","平板","上斜","下斜","推举胸","bench","胸"], icon:"bench", zone:"upper"},
+  {kw:["划船","row"], icon:"row", zone:"upper"},
+  {kw:["引体","下拉","高位","pull","背阔","背"], icon:"pullup", zone:"upper"},
+  {kw:["肩","推举","侧平举","前平举","arnold","shoulder","press","推肩"], icon:"shoulder", zone:"upper"},
+  {kw:["弯举","二头","三头","臂屈伸","臂","curl","biceps","triceps"], icon:"biceps", zone:"upper"},
+  {kw:["哑铃"], icon:"dumbbell", zone:"upper"},
+  {kw:["卷腹","仰卧起坐","crunch","sit"], icon:"crunch", zone:"core"},
+  {kw:["平板支撑","plank","支撑"], icon:"plank", zone:"core"},
+  {kw:["腹","举腿","转体","核心","abs","russian","mountain"], icon:"abs", zone:"core"},
+  {kw:["臀冲","臀桥","臀推","臀腿","臀","hip","glute"], icon:"glute", zone:"lower"},
+  {kw:["硬拉","deadlift","rdl"], icon:"deadlift", zone:"lower"},
+  {kw:["保加利亚","箭步","弓步","分腿","lunge","step","split"], icon:"lunge", zone:"lower"},
+  {kw:["相扑","深蹲","蹲","squat"], icon:"squat", zone:"lower"},
+  {kw:["腿","蹬","腿屈伸","勾腿","小腿","提踵","leg","calf"], icon:"leg", zone:"lower"},
+  {kw:["跑","有氧","run","跳","波比","burpee"], icon:"running", zone:"core"},
+];
+function matchIcon(name){
+  const n=(name||"").toLowerCase();
+  for(const m of MATCH){if(m.kw.some(k=>n.includes(k.toLowerCase())))return m;}
+  return {icon:"generic", zone:null};
+}
+
+/* ---------- 数据 ---------- */
+const ZONES=[
+  {id:"upper",label:"上肢",emoji:"💪"},
+  {id:"core",label:"核心",emoji:"🔥"},
+  {id:"lower",label:"下肢",emoji:"🦵"},
+];
+const KEY="myFitnessManual.v2";
+let state=load();
+let activeZone="lower";
+let editId=null,tempImg=null,tempIcon="generic";
+let histId=null;
+
+function load(){
+  try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.exercises)return d;}catch(e){}
+  return {exercises: seed()};
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));}
+
+function seed(){
+  const e=(o)=>Object.assign({id:uid(),img:null,history:[]},o);
+  return [
+    // 上肢
+    e({zone:"upper",name:"哑铃推胸",weight:"8kg × 4组×10次",icon:"bench",
+       target:"胸大肌（中下部）· 双手把哑铃向中间夹挤、胸部主动发力",
+       notes:"仰卧，哑铃下放到胸两侧、肘约45°，推起时想着用胸把手肘合拢，顶峰挤一下，别耸肩。"}),
+    e({zone:"upper",name:"窄距高位下拉",weight:"24kg × 4组×12次",icon:"pullup",
+       target:"背阔肌（下部）· 先沉肩、用背带动手肘往腰侧下沉发力",
+       notes:"窄握，挺胸略后仰，把杠拉到上胸位置，全程靠背发力别用手臂硬拽，离心慢放充分拉伸。"}),
+    e({zone:"upper",name:"单臂划船",weight:"（待补充重量）",icon:"row",
+       target:"背阔肌 / 中背 · 手肘贴身后拉、肩胛主动后缩夹紧",
+       notes:"单膝撑凳，背部挺平别含胸，哑铃沿身体往后上方拉到腰侧，顶峰挤背 1 秒再控制下放。下次记得记录重量。"}),
+    // 下肢（重点练臀）
+    e({zone:"lower",name:"硬拉",weight:"40kg × 4组×8次",icon:"deadlift",
+       target:"臀大肌 + 腘绳肌（大腿后侧）+ 下背 · 臀和大腿后侧顶髋发力站起",
+       notes:"杠贴小腿，挺胸锁背，靠顶髋（送胯）站起而不是用腰起，全程背部中立别弓背，顶峰夹臀。"}),
+    e({zone:"lower",name:"单腿硬拉",weight:"10kg × 3组×10次/侧",icon:"deadlift",
+       target:"臀大肌 + 臀中肌（侧臀）+ 平衡 · 支撑腿臀部发力收髋起身",
+       notes:"单腿站稳，髋部后折、上身与后抬腿成一条直线下放，靠支撑腿的臀把身体拉回，慢、稳、找臀部拉伸感。"}),
+    e({zone:"lower",name:"保加利亚蹲",weight:"12kg × 3组×10次/侧",icon:"lunge",
+       target:"臀大肌（前腿）+ 股四头 · 重心放前腿、前腿臀部发力蹬起",
+       notes:"后脚搭凳，身体略前倾让臀部更吃力，下蹲到前腿大腿平行，前腿脚跟发力站起，膝盖别内扣。"}),
+    e({zone:"lower",name:"臀腿（臀推）",weight:"60kg × 4组×10次",icon:"glute",
+       target:"臀大肌 · 全程顶髋、顶到最高时用力夹臀挤压",
+       notes:"上背靠凳，下巴微收，发力顶髋到大腿与躯干成一条线，顶点夹臀停 1 秒，下放别完全落地保持张力。"}),
+    e({zone:"lower",name:"相扑蹲",weight:"15kg × 4组×12次",icon:"squat",
+       target:"臀大肌 + 大腿内侧（内收肌）· 臀部下沉、起身时夹臀+内收发力",
+       notes:"双脚比肩宽、脚尖外展，挺胸直背垂直下蹲，膝盖对准脚尖方向，起身顶髋夹臀，感受臀和大腿内侧。"}),
+    // 核心
+    e({zone:"core",name:"平板支撑",weight:"自重 × 3组×60秒",icon:"plank",
+       target:"腹横肌 / 整个核心 · 收紧腹部和臀部维持刚性",
+       notes:"肘在肩正下方，身体一条直线，收紧臀和核心，别塌腰也别撅屁股，正常呼吸。"}),
+  ];
+}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+/* ---------- 渲染 ---------- */
+function renderTabs(){
+  const el=document.getElementById("tabs");
+  el.innerHTML=ZONES.map(z=>{
+    const c=state.exercises.filter(e=>e.zone===z.id).length;
+    return `<div class="tab ${z.id===activeZone?'active':''}" onclick="switchZone('${z.id}')">
+      ${z.emoji} ${z.label} <span class="cnt">${c}</span></div>`;
+  }).join("");
+}
+function switchZone(z){activeZone=z;renderTabs();renderGrid();}
+function iconSvg(name){return ICONS[name]||ICONS.generic;}
+
+function renderGrid(){
+  const grid=document.getElementById("grid");
+  const list=state.exercises.filter(e=>e.zone===activeZone);
+  let html=list.map(e=>{
+    const media=e.img?`<img src="${e.img}" alt="">`:iconSvg(e.icon);
+    const last=(e.history&&e.history.length)?e.history[e.history.length-1]:null;
+    return `<div class="card">
+      <div class="thumb" onclick="openModal('${e.id}')">
+        ${media}<div class="upload-hint">✏️ 点击编辑</div>
+      </div>
+      <div class="card-body">
+        <div class="card-title">
+          <h3>${esc(e.name)}</h3>
+          ${e.weight?`<span class="weight">${esc(e.weight)}</span>`:""}
+        </div>
+        ${e.target?`<div class="target"><b>📍 部位/发力：</b>${esc(e.target)}</div>`:""}
+        <div class="notes">
+          ${e.notes?`<span class="label">动作要点</span>${esc(e.notes)}`:'<span style="opacity:.5">暂无要点</span>'}
+        </div>
+        ${last?`<div class="last-log">🕘 最近：${last.date} · ${esc(last.weight)}kg${last.note?' · '+esc(last.note):''}</div>`:""}
+        <div class="card-actions">
+          <button class="log" onclick="openHist('${e.id}')">📈 记录(${e.history?e.history.length:0})</button>
+          <button onclick="openModal('${e.id}')">编辑</button>
+          <button class="del" onclick="delExercise('${e.id}')">删除</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+  html+=`<div class="add-card" onclick="openModal()"><span class="plus">+</span>添加${zoneLabel(activeZone)}动作</div>`;
+  grid.innerHTML=html;
+  renderStats();
+}
+function zoneLabel(id){return (ZONES.find(z=>z.id===id)||{}).label||"";}
+function renderStats(){
+  document.getElementById("stat-total").textContent=state.exercises.length;
+  document.getElementById("stat-upper").textContent=state.exercises.filter(e=>e.zone==="upper").length;
+  document.getElementById("stat-core").textContent=state.exercises.filter(e=>e.zone==="core").length;
+  document.getElementById("stat-lower").textContent=state.exercises.filter(e=>e.zone==="lower").length;
+}
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/\n/g,"<br>");}
+
+/* ---------- 编辑弹窗 ---------- */
+function openModal(id,prefill){
+  editId=id||null;tempImg=null;tempIcon="generic";
+  if(id){
+    const e=state.exercises.find(x=>x.id===id);
+    document.getElementById("modalTitle").textContent="编辑动作";
+    document.getElementById("f-zone").value=e.zone;
+    document.getElementById("f-name").value=e.name;
+    document.getElementById("f-weight").value=e.weight||"";
+    document.getElementById("f-target").value=e.target||"";
+    document.getElementById("f-notes").value=e.notes||"";
+    tempImg=e.img||null;tempIcon=e.icon||"generic";
+  }else if(prefill){
+    document.getElementById("modalTitle").textContent="添加动作（来自搜索）";
+    document.getElementById("f-zone").value=prefill.zone||activeZone;
+    document.getElementById("f-name").value=prefill.name||"";
+    document.getElementById("f-weight").value=prefill.weight||"";
+    document.getElementById("f-target").value=prefill.target||"";
+    document.getElementById("f-notes").value=prefill.notes||"";
+    tempImg=prefill.img||null;tempIcon=prefill.icon||"generic";
+  }else{
+    document.getElementById("modalTitle").textContent="添加动作";
+    document.getElementById("f-zone").value=activeZone;
+    ["f-name","f-weight","f-target","f-notes"].forEach(i=>document.getElementById(i).value="");
+  }
+  document.getElementById("matchTip").textContent="";
+  updatePreview();
+  document.getElementById("overlay").classList.add("show");
+}
+function closeModal(){document.getElementById("overlay").classList.remove("show");}
+document.getElementById("overlay").addEventListener("click",e=>{if(e.target.id==="overlay")closeModal();});
+
+function onNameInput(){
+  const name=document.getElementById("f-name").value;
+  const m=matchIcon(name);
+  if(!tempImg){tempIcon=m.icon;updatePreview();}
+  const tip=document.getElementById("matchTip");
+  if(name.trim() && m.icon!=="generic"){
+    tip.textContent="✓ 已自动匹配配图"+(m.zone?`，建议分区：${zoneLabel(m.zone)}`:"");
+    if(m.zone && !editId) document.getElementById("f-zone").value=m.zone;
+  }else tip.textContent="";
+}
+function updatePreview(){
+  document.getElementById("previewBox").innerHTML=tempImg?`<img src="${tempImg}">`:iconSvg(tempIcon);
+}
+function onUpload(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{tempImg=r.result;updatePreview();document.getElementById("matchTip").textContent="✓ 已使用上传图片";};
+  r.readAsDataURL(f);
+}
+function resetImg(){tempImg=null;onNameInput();updatePreview();}
+
+function saveExercise(){
+  const name=document.getElementById("f-name").value.trim();
+  if(!name){alert("请填写动作名称");return;}
+  const obj={
+    zone:document.getElementById("f-zone").value,
+    name,
+    weight:document.getElementById("f-weight").value.trim(),
+    target:document.getElementById("f-target").value.trim(),
+    notes:document.getElementById("f-notes").value.trim(),
+    icon:tempIcon,img:tempImg,
+  };
+  if(editId){const e=state.exercises.find(x=>x.id===editId);Object.assign(e,obj);}
+  else{obj.id=uid();obj.history=[];state.exercises.push(obj);activeZone=obj.zone;}
+  save();closeModal();renderTabs();renderGrid();
+}
+function delExercise(id){
+  const e=state.exercises.find(x=>x.id===id);
+  if(!confirm(`确定删除「${e.name}」？`))return;
+  state.exercises=state.exercises.filter(x=>x.id!==id);
+  save();renderTabs();renderGrid();
+}
+
+/* ---------- 训练历史 ---------- */
+function openHist(id){
+  histId=id;
+  const e=state.exercises.find(x=>x.id===id);
+  document.getElementById("histTitle").textContent="📈 "+e.name+" · 训练历史";
+  document.getElementById("log-date").value=new Date().toISOString().slice(0,10);
+  // 预填上次重量，方便快速记录
+  const last=e.history&&e.history.length?e.history[e.history.length-1]:null;
+  document.getElementById("log-weight").value=last?last.weight:"";
+  document.getElementById("log-note").value="";
+  renderHist();
+  document.getElementById("histOverlay").classList.add("show");
+}
+function closeHist(){document.getElementById("histOverlay").classList.remove("show");}
+document.getElementById("histOverlay").addEventListener("click",e=>{if(e.target.id==="histOverlay")closeHist();});
+
+function addLog(){
+  const e=state.exercises.find(x=>x.id===histId);
+  const date=document.getElementById("log-date").value;
+  const weight=document.getElementById("log-weight").value.trim();
+  const note=document.getElementById("log-note").value.trim();
+  if(!date){alert("请选择日期");return;}
+  if(weight===""){alert("请填写重量");return;}
+  e.history.push({date,weight,note});
+  e.history.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+  // 把最近一次重量同步到卡片的“当前重量”单位部分（仅数值，保留用户单位习惯）
+  save();renderHist();renderGrid();
+  document.getElementById("log-note").value="";
+}
+function delLog(i){
+  const e=state.exercises.find(x=>x.id===histId);
+  e.history.splice(i,1);
+  save();renderHist();renderGrid();
+}
+function renderHist(){
+  const e=state.exercises.find(x=>x.id===histId);
+  const h=e.history||[];
+  // 列表
+  let max=Math.max(...h.map(x=>parseFloat(x.weight)||0),0);
+  const list=document.getElementById("histList");
+  if(!h.length){list.innerHTML='<li style="color:#8b949e;justify-content:center">还没有记录，添加你的第一次训练吧 💪</li>';}
+  else{
+    list.innerHTML=h.slice().reverse().map((x,ri)=>{
+      const i=h.length-1-ri;
+      const isPR=(parseFloat(x.weight)||0)>=max && max>0;
+      return `<li>
+        <span class="hd">${x.date}</span>
+        <span class="hw">${esc(x.weight)}kg${isPR?'<span class="pr-badge">PR</span>':''}</span>
+        <span class="hn">${esc(x.note||'')}</span>
+        <span class="hx" onclick="delLog(${i})">✕</span>
+      </li>`;
+    }).join("");
+  }
+  renderChart(h);
+}
+function renderChart(h){
+  const box=document.getElementById("chart");
+  const pts=h.map(x=>({d:x.date,v:parseFloat(x.weight)})).filter(p=>!isNaN(p.v));
+  if(pts.length<1){box.innerHTML='<div class="empty">记录 2 次以上即可看到进步曲线</div>';return;}
+  const W=420,H=150,pad=28;
+  const vals=pts.map(p=>p.v);
+  let mn=Math.min(...vals),mx=Math.max(...vals);
+  if(mn===mx){mn=mn-1;mx=mx+1;}
+  const n=pts.length;
+  const x=i=> n===1? W/2 : pad+(W-2*pad)*i/(n-1);
+  const y=v=> H-pad-(H-2*pad)*(v-mn)/(mx-mn);
+  let path="",dots="",labels="";
+  pts.forEach((p,i)=>{
+    const cx=x(i),cy=y(p.v);
+    path+=(i===0?"M":"L")+cx.toFixed(1)+" "+cy.toFixed(1)+" ";
+    dots+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4" fill="#f0883e"/>`;
+    dots+=`<text x="${cx.toFixed(1)}" y="${(cy-9).toFixed(1)}" fill="#e6edf3" font-size="11" text-anchor="middle">${p.v}</text>`;
+    if(i===0||i===n-1||n<=6)
+      labels+=`<text x="${cx.toFixed(1)}" y="${H-8}" fill="#8b949e" font-size="9" text-anchor="middle">${p.d.slice(5)}</text>`;
+  });
+  const first=pts[0].v,lastv=pts[n-1].v,diff=(lastv-first);
+  const trend=diff>0?`▲ +${diff.toFixed(1)}kg`:diff<0?`▼ ${diff.toFixed(1)}kg`:`持平`;
+  const trendColor=diff>0?'#3fb950':diff<0?'#f85149':'#8b949e';
+  box.innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:#8b949e;padding:0 6px 6px">
+      <span>重量进步曲线（kg）</span>
+      <span style="color:${trendColor};font-weight:700">较首次 ${trend}</span>
+    </div>
+    <svg viewBox="0 0 ${W} ${H}" width="100%">
+      <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#2a323d"/>
+      <path d="${path}" fill="none" stroke="#f0883e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}${labels}
+    </svg>`;
+}
+
+/* ---------- 备份 ---------- */
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="健身手册备份_"+new Date().toISOString().slice(0,10)+".json";
+  a.click();
+}
+function importData(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{const d=JSON.parse(r.result);if(!d.exercises)throw 0;
+      if(!confirm("导入将覆盖当前数据，确定？"))return;
+      state=d;
+      state.exercises.forEach(e=>{if(!e.history)e.history=[];});
+      save();renderTabs();renderGrid();alert("导入成功");
+    }catch(e){alert("文件格式不正确");}
+  };
+  r.readAsText(f);ev.target.value="";
+}
+
+/* ================= 动作搜索（本地知识库 + wger 联网） ================= */
+/* 内置中文动作知识库：建议重量为新手/进阶参考区间 */
+const KB=[
+  // —— 上肢 ——
+  {name:"杠铃卧推",zone:"upper",icon:"bench",en:"bench press",alias:["卧推","胸","推胸","bench","chest"],
+   target:"胸大肌（中部）· 胸部夹挤、手肘合拢发力",
+   weight:"新手 空杆20kg起 / 进阶 0.6–1×体重",
+   notes:"沉肩收肩胛，杠下放到乳头连线、肘约45°，推起想用胸把手肘合拢，别耸肩，脚踩实蹬地。"},
+  {name:"哑铃推胸",zone:"upper",icon:"bench",en:"dumbbell bench press",alias:["哑铃卧推","推胸","胸","chest"],
+   target:"胸大肌（中下部）· 双手向中间夹挤、胸部主动发力",
+   weight:"新手 6–10kg/手 / 进阶 14–22kg/手",
+   notes:"下放到胸两侧充分拉伸，推起夹胸顶峰收缩，全程控制别砸下去。"},
+  {name:"哑铃飞鸟",zone:"upper",icon:"dumbbellFly",en:"dumbbell fly",alias:["飞鸟","夹胸","fly"],
+   target:"胸大肌（中缝）· 大臂像抱大树一样合拢，胸发力",
+   weight:"新手 4–8kg/手 / 进阶 10–16kg/手",
+   notes:"小重量、肘微屈固定角度，靠胸把手臂划弧合拢，找胸部拉伸与挤压，别变成推。"},
+  {name:"高位下拉",zone:"upper",icon:"pullup",en:"lat pulldown",alias:["下拉","背","背阔","lat","pulldown"],
+   target:"背阔肌 · 先沉肩、用背带动手肘下沉",
+   weight:"新手 20–30kg / 进阶 40–60kg",
+   notes:"挺胸略后仰，把杠拉到上胸，靠背发力别用手臂硬拽，离心慢放充分伸展。"},
+  {name:"坐姿划船",zone:"upper",icon:"row",en:"seated cable row",alias:["划船","背中部","row"],
+   target:"背中部 / 菱形肌 · 肩胛后缩、手肘后拉",
+   weight:"新手 25–40kg / 进阶 45–70kg",
+   notes:"挺胸坐直别含胸，把把手拉到肚脐附近，顶峰夹背 1 秒，回放控制不要被拉得圆背。"},
+  {name:"单臂哑铃划船",zone:"upper",icon:"row",en:"one arm dumbbell row",alias:["单臂划船","划船","背","row"],
+   target:"背阔肌 / 中背 · 手肘贴身后拉、肩胛后缩夹紧",
+   weight:"新手 8–14kg / 进阶 18–28kg",
+   notes:"单膝撑凳背挺平，哑铃沿身体往后上方拉到腰侧，顶峰挤背 1 秒再控制下放。"},
+  {name:"站姿肩上推举",zone:"upper",icon:"shoulder",en:"overhead press",alias:["推举","肩","肩推","shoulder","press"],
+   target:"三角肌（前/中束）· 收紧核心、向上推顶",
+   weight:"新手 6–10kg/手 / 进阶 14–22kg/手",
+   notes:"核心收紧别塌腰，沿耳侧把哑铃推到头顶，顶部不锁死，下放到耳朵高度控制。"},
+  {name:"哑铃侧平举",zone:"upper",icon:"shoulder",en:"lateral raise",alias:["侧平举","三角肌","肩","lateral"],
+   target:"三角肌（中束）· 肘领先抬起、想象提水桶",
+   weight:"新手 3–6kg/手 / 进阶 8–12kg/手",
+   notes:"小重量严格，微屈肘以肘部领先抬到与肩平，别耸肩别甩，慢放控制感受中束。"},
+  {name:"哑铃二头弯举",zone:"upper",icon:"biceps",en:"biceps curl",alias:["弯举","二头","curl","biceps"],
+   target:"肱二头肌 · 大臂夹紧固定、只动小臂",
+   weight:"新手 6–10kg/手 / 进阶 12–18kg/手",
+   notes:"大臂贴身别晃，靠二头把哑铃卷起顶峰收缩，离心慢放别借腰部惯性。"},
+  {name:"绳索三头下压",zone:"upper",icon:"biceps",en:"triceps pushdown",alias:["三头","臂屈伸","下压","triceps"],
+   target:"肱三头肌 · 大臂夹身固定、向下伸直发力",
+   weight:"新手 15–25kg / 进阶 30–45kg",
+   notes:"大臂夹紧躯干别动，只伸前臂把绳索压到底，顶峰夹一下三头，回放控制到位。"},
+  // —— 核心 ——
+  {name:"平板支撑",zone:"core",icon:"plank",en:"plank",alias:["plank","支撑","核心"],
+   target:"腹横肌 / 整体核心 · 收紧腹和臀维持刚性",
+   weight:"自重 · 3组×30–60秒",
+   notes:"肘在肩正下方，身体一条直线，收紧臀和核心，别塌腰别撅屁股，正常呼吸。"},
+  {name:"卷腹",zone:"core",icon:"crunch",en:"crunch",alias:["卷腹","仰卧起坐","腹","crunch"],
+   target:"腹直肌（上部）· 靠腹部把上背卷离地",
+   weight:"自重 · 3组×15–20次",
+   notes:"下巴别夹胸，靠腹部发力把肩胛卷离地面，顶峰呼气收紧，慢放别用脖子拽。"},
+  {name:"仰卧举腿",zone:"core",icon:"abs",en:"lying leg raise",alias:["举腿","下腹","leg raise"],
+   target:"腹直肌（下部）· 靠下腹把骨盆微卷收起",
+   weight:"自重 · 3组×12–15次",
+   notes:"下背贴地别拱起，腿伸直或微屈抬起，下放时腿别完全落地保持张力。"},
+  {name:"俄罗斯转体",zone:"core",icon:"abs",en:"russian twist",alias:["转体","腹斜","russian"],
+   target:"腹斜肌 · 转体时腰腹带动、肩跟着转",
+   weight:"自重或 2–6kg",
+   notes:"上身后仰约45°，靠腰腹左右转动触地，动作有控制别只甩手臂。"},
+  {name:"登山者",zone:"core",icon:"running",en:"mountain climber",alias:["登山","mountain","核心","有氧"],
+   target:"核心 + 心肺 · 核心稳住、交替提膝",
+   weight:"自重 · 3组×30–40秒",
+   notes:"俯撑手在肩下，核心收紧别塌腰，交替快速提膝向胸口，臀别拱高。"},
+  // —— 下肢 ——
+  {name:"杠铃深蹲",zone:"lower",icon:"squat",en:"barbell squat",alias:["深蹲","蹲","squat","腿"],
+   target:"股四头 + 臀大肌 · 髋膝同时屈伸、蹬地起",
+   weight:"新手 空杆20kg起 / 进阶 0.75–1.5×体重",
+   notes:"脚略外八与肩同宽，挺胸下蹲到大腿过平行，膝盖对准脚尖，蹬地顶髋站起。"},
+  {name:"高脚杯深蹲",zone:"lower",icon:"squat",en:"goblet squat",alias:["高脚杯","深蹲","goblet"],
+   target:"股四头 + 臀 · 重心居中、垂直下蹲",
+   weight:"新手 8–16kg / 进阶 20–32kg",
+   notes:"双手抱哑铃于胸前，挺胸坐下到大腿平行，手肘内侧轻碰膝内侧，起身夹臀。"},
+  {name:"相扑蹲",zone:"lower",icon:"squat",en:"sumo squat",alias:["相扑","蹲","内收","sumo"],
+   target:"臀大肌 + 大腿内侧 · 起身夹臀 + 内收发力",
+   weight:"新手 10–18kg / 进阶 20–35kg",
+   notes:"双脚比肩宽、脚尖外展，挺胸垂直下蹲，膝盖对准脚尖，起身顶髋夹臀感受内侧。"},
+  {name:"硬拉",zone:"lower",icon:"deadlift",en:"deadlift",alias:["硬拉","deadlift","臀","背"],
+   target:"臀大肌 + 腘绳肌 + 下背 · 顶髋送胯站起",
+   weight:"新手 40kg起 / 进阶 1–1.5×体重",
+   notes:"杠贴小腿，挺胸锁背，靠顶髋站起而非用腰，全程背中立别弓背，顶峰夹臀。"},
+  {name:"罗马尼亚硬拉",zone:"lower",icon:"deadlift",en:"romanian deadlift",alias:["RDL","罗马尼亚","屈髋","臀","腘绳"],
+   target:"臀大肌 + 腘绳肌 · 髋后折、大腿后侧拉伸发力",
+   weight:"新手 30–40kg / 进阶 60–90kg",
+   notes:"微屈膝固定，髋部主动后推下放，感受大腿后侧拉伸，到膝下后顶髋夹臀起身。"},
+  {name:"单腿硬拉",zone:"lower",icon:"deadlift",en:"single leg deadlift",alias:["单腿硬拉","臀中","平衡"],
+   target:"臀大肌 + 臀中肌 + 平衡 · 支撑腿臀部收髋起身",
+   weight:"新手 8–12kg / 进阶 16–24kg",
+   notes:"单腿站稳，髋后折、上身与后抬腿成直线，靠支撑腿的臀把身体拉回，慢而稳。"},
+  {name:"保加利亚分腿蹲",zone:"lower",icon:"lunge",en:"bulgarian split squat",alias:["保加利亚","分腿蹲","箭步","bulgarian"],
+   target:"臀大肌（前腿）+ 股四头 · 前腿臀部蹬起",
+   weight:"新手 8–14kg / 进阶 18–30kg",
+   notes:"后脚搭凳，身体略前倾让臀更吃力，下蹲到前腿平行，前腿脚跟蹬起，膝别内扣。"},
+  {name:"臀推",zone:"lower",icon:"glute",en:"hip thrust",alias:["臀推","臀冲","臀桥","臀腿","hip thrust","glute"],
+   target:"臀大肌 · 全程顶髋、顶点用力夹臀挤压",
+   weight:"新手 40–60kg / 进阶 80–120kg",
+   notes:"上背靠凳、下巴微收，顶髋到大腿与躯干成一线，顶点夹臀停1秒，下放保持张力。"},
+  {name:"箭步蹲",zone:"lower",icon:"lunge",en:"lunge",alias:["箭步","弓步","分腿","lunge"],
+   target:"臀大肌 + 股四头 · 前腿脚跟发力站起",
+   weight:"新手 6–12kg/手 / 进阶 16–26kg/手",
+   notes:"跨步下蹲到前腿大腿平行、后膝接近地面，上身正直，前脚跟发力回到起点。"},
+  {name:"腿举",zone:"lower",icon:"leg",en:"leg press",alias:["腿举","蹬腿","leg press"],
+   target:"股四头 + 臀大肌 · 脚掌蹬板、髋膝伸直",
+   weight:"新手 60–100kg / 进阶 120–200kg",
+   notes:"下背贴稳靠垫，下放到膝约90°别让臀离垫，蹬起时膝盖不完全锁死。"},
+  {name:"提踵",zone:"lower",icon:"leg",en:"calf raise",alias:["提踵","小腿","calf"],
+   target:"小腿（腓肠肌/比目鱼肌）· 前脚掌发力踮到最高",
+   weight:"新手 自重–20kg / 进阶 40–80kg",
+   notes:"前脚掌踩稳，踮到最高顶峰夹小腿停一下，慢放到脚跟低于台阶充分拉伸。"},
+];
+
+function openSearch(){
+  document.getElementById("searchOverlay").classList.add("show");
+  const q=document.getElementById("quickTags");
+  q.innerHTML=["臀","胸","背","肩","腿","核心","深蹲","硬拉","卧推"]
+    .map(t=>`<span onclick="quickSearch('${t}')">${t}</span>`).join("");
+  if(!document.getElementById("resList").innerHTML){
+    document.getElementById("searchHint").textContent="试试上面的快捷标签，或输入动作名 / 部位（中英文都行）";
+  }
+  document.getElementById("searchInput").focus();
+}
+function closeSearch(){document.getElementById("searchOverlay").classList.remove("show");}
+document.getElementById("searchOverlay").addEventListener("click",e=>{if(e.target.id==="searchOverlay")closeSearch();});
+function quickSearch(t){document.getElementById("searchInput").value=t;doSearch();}
+
+function localSearch(term){
+  const t=term.toLowerCase().trim();
+  if(!t)return KB.slice();
+  return KB.filter(k=>{
+    const hay=(k.name+" "+k.en+" "+(k.alias||[]).join(" ")+" "+k.target+" "+zoneLabel(k.zone)).toLowerCase();
+    return hay.includes(t);
+  });
+}
+
+function doSearch(){
+  const term=document.getElementById("searchInput").value.trim();
+  const hint=document.getElementById("searchHint");
+  hint.className="search-hint";
+  const local=localSearch(term);
+  renderResults(local,[]);
+  if(!term){hint.textContent=`本地动作库共 ${KB.length} 个动作`;return;}
+  hint.textContent=local.length?`本地匹配 ${local.length} 个，正在联网搜索真实示范图…`:"本地无匹配，正在联网搜索…";
+  fetchOnline(term).then(online=>{
+    if(online===null){hint.className="search-hint err";hint.textContent="⚠️ 联网失败（可能是离线或浏览器限制），已为你显示本地动作库结果。";return;}
+    // 用在线缩略图增强本地结果
+    online.forEach(o=>{
+      const m=local.find(l=>o.name.toLowerCase().includes(l.en.split(" ")[0])||l.en.includes(o.name.toLowerCase().split(" ")[0]));
+      if(m&&o.img&&!m._img)m._img=o.img;
+    });
+    // 在线独有结果（本地库没有的）
+    const extra=online.filter(o=>!local.some(l=>o.name.toLowerCase().includes(l.en)||l.en.includes(o.name.toLowerCase()))).slice(0,6);
+    renderResults(local,extra);
+    hint.textContent=`本地 ${local.length} 个 + 在线 ${extra.length} 个结果（在线动作的重量为通用参考）`;
+  });
+}
+
+/* wger 开放 API：英文搜索动作，取名称与缩略图 */
+async function fetchOnline(term){
+  try{
+    const url="https://wger.de/api/v2/exercise/search/?language=2&format=json&term="+encodeURIComponent(term);
+    const r=await fetch(url,{headers:{"Accept":"application/json"}});
+    if(!r.ok)return null;
+    const j=await r.json();
+    const seen=new Set();
+    return (j.suggestions||[]).map(s=>{
+      const d=s.data||{};
+      let img=d.image_thumbnail||d.image||null;
+      if(img&&img.startsWith("/"))img="https://wger.de"+img;
+      return {name:s.value||d.name||"", img, category:(d.category||"")};
+    }).filter(x=>{if(!x.name||seen.has(x.name))return false;seen.add(x.name);return true;});
+  }catch(e){return null;}
+}
+
+/* 按部位生成通用中文指导（用于联网结果） */
+function zoneTips(zone){
+  if(zone==="lower")return{
+    target:"下肢 / 臀腿 · 顶髋夹臀、膝盖对准脚尖发力",
+    weight:"参考：选能标准完成 8–12 次、最后 2 次略吃力的重量",
+    notes:"下蹲或下放控制节奏，膝盖与脚尖同向不要内扣，起身时顶髋夹臀；先把动作做到位再加重量。"};
+  if(zone==="core")return{
+    target:"核心 · 收紧腹部、脊柱保持中立",
+    weight:"以自重为主，可逐步增加配重或时长",
+    notes:"保持均匀呼吸，靠腹部发力别用腰背代偿，宁慢勿快、专注感受腹部收缩。"};
+  return{
+    target:"上肢目标肌群 · 沉肩收肩胛、目标肌主动发力",
+    weight:"参考：选能标准完成 8–12 次、最后 2 次略吃力的重量",
+    notes:"全程控制离心、避免借力甩动；动作幅度到位优先于上大重量，顶峰适当收缩。"};
+}
+function renderResults(local,extra){
+  const box=document.getElementById("resList");
+  const card=(d,online)=>{
+    const media=d._img?`<img src="${d._img}">`:(d.img?`<img src="${d.img}">`:iconSvg(d.icon||matchIcon(d.name).icon));
+    const zone=d.zone||matchIcon(d.name).zone||"upper";
+    const tips=zoneTips(zone);
+    const data={name:d.name,zone:zone,icon:d.icon||matchIcon(d.name).icon,
+      target:d.target||tips.target,
+      weight:d.weight||tips.weight,
+      notes:d.notes||tips.notes,
+      img:d._img||d.img||null};
+    return `<div class="res">
+      <div class="ricon">${media}</div>
+      <div class="rbody">
+        <div class="rtop">
+          <h4>${esc(d.name)}</h4>
+          <span class="zb">${zoneLabel(zone)}</span>
+          <span class="src ${online?'online':''}">${online?'wger 在线':'本地库'}</span>
+        </div>
+        <div class="rt">📍 ${esc(data.target)}</div>
+        <div class="rw">🏋️ 建议重量：${esc(data.weight)}</div>
+        <div class="rn">${esc(data.notes)}</div>
+      </div>
+      <button class="radd" onclick='addFromSearch(${JSON.stringify(data).replace(/'/g,"&#39;")})'>➕ 加入手册</button>
+    </div>`;
+  };
+  let html=local.map(d=>card(d,false)).join("");
+  html+=(extra||[]).map(d=>card(d,true)).join("");
+  box.innerHTML=html||'<div style="color:#8b949e;text-align:center;padding:30px">没有找到匹配的动作，换个关键词试试～</div>';
+}
+
+function addFromSearch(data){
+  closeSearch();
+  openModal(null,data);
+}
+
+/* ---------- init ---------- */
+state.exercises.forEach(e=>{if(!e.history)e.history=[];});
+renderTabs();renderGrid();
+</script>
+</body>
+</html>
