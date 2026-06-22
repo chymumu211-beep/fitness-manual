@@ -165,6 +165,8 @@
   .res .zb{font-size:11px;padding:2px 9px;border-radius:999px;background:rgba(240,136,62,.15);color:var(--accent);border:1px solid rgba(240,136,62,.3)}
   .res .src{font-size:10px;color:var(--muted);border:1px solid var(--line);padding:1px 7px;border-radius:999px}
   .res .src.online{color:var(--blue);border-color:rgba(88,166,255,.4)}
+  .res .src.rec{color:#1a1206;background:linear-gradient(135deg,#ffd76f,#f0a83e);border-color:transparent;font-weight:700}
+  .res.isrec{border-color:rgba(240,168,62,.5);background:linear-gradient(180deg,rgba(240,168,62,.07),var(--panel-2))}
   .res .rt{font-size:12px;color:var(--pink);margin:3px 0}
   .res .rw{font-size:12px;color:var(--accent-2);margin:3px 0}
   .res .rn{font-size:12px;color:var(--muted);line-height:1.55}
@@ -793,10 +795,10 @@ const KB=[
 function openSearch(){
   document.getElementById("searchOverlay").classList.add("show");
   const q=document.getElementById("quickTags");
-  q.innerHTML=["臀","胸","背","肩","腿","核心","深蹲","硬拉","卧推"]
+  q.innerHTML=["翘臀","上臀","臀中肌","马甲线","拜拜肉","美背","大腿后侧","蝴蝶肩","小腿"]
     .map(t=>`<span onclick="quickSearch('${t}')">${t}</span>`).join("");
   if(!document.getElementById("resList").innerHTML){
-    document.getElementById("searchHint").textContent="试试上面的快捷标签，或输入动作名 / 部位（中英文都行）";
+    document.getElementById("searchHint").textContent="输入想练的部位（如 上臀、翘臀、马甲线、拜拜肉），按效率推荐动作；也可直接搜动作名";
   }
   document.getElementById("searchInput").focus();
 }
@@ -813,14 +815,56 @@ function localSearch(term){
   });
 }
 
+/* 部位 -> 最高效动作（按训练效率排序）。具体部位排在通用部位前面 */
+const PARTS=[
+  {keys:["上臀","臀大肌上部","臀上","臀部上沿"], list:["臀推","保加利亚分腿蹲","箭步蹲","单腿硬拉"]},
+  {keys:["臀中肌","侧臀","臀两侧","胯","马鞍肉"], list:["单腿硬拉","相扑蹲","箭步蹲","保加利亚分腿蹲"]},
+  {keys:["下臀","臀下沿","臀腿衔接","臀线"], list:["罗马尼亚硬拉","硬拉","臀推"]},
+  {keys:["翘臀","提臀","蜜桃臀","臀","屁股","glute"], list:["臀推","硬拉","保加利亚分腿蹲","相扑蹲","单腿硬拉","箭步蹲"]},
+  {keys:["大腿前侧","股四头","大腿前","腿前"], list:["杠铃深蹲","高脚杯深蹲","腿举","保加利亚分腿蹲"]},
+  {keys:["大腿后侧","腘绳","腿后","大腿后"], list:["罗马尼亚硬拉","硬拉","单腿硬拉"]},
+  {keys:["大腿内侧","内收肌","腿内侧","大腿缝"], list:["相扑蹲","高脚杯深蹲"]},
+  {keys:["小腿","萝卜腿","calf"], list:["提踵"]},
+  {keys:["腿","下肢","leg"], list:["杠铃深蹲","硬拉","保加利亚分腿蹲","腿举","臀推"]},
+  {keys:["胸","胸部","胸肌","副乳","chest"], list:["哑铃推胸","杠铃卧推","哑铃飞鸟"]},
+  {keys:["美背","背","背部","背阔肌","驼背","虎背","back"], list:["高位下拉","坐姿划船","单臂哑铃划船"]},
+  {keys:["蝴蝶肩","肩","肩部","肩膀","天鹅颈","shoulder"], list:["站姿肩上推举","哑铃侧平举"]},
+  {keys:["拜拜肉","蝴蝶袖","手臂后侧","大臂","三头"], list:["绳索三头下压"]},
+  {keys:["二头","手臂前侧","手臂线条"], list:["哑铃二头弯举"]},
+  {keys:["手臂","胳膊","arm"], list:["哑铃二头弯举","绳索三头下压","站姿肩上推举"]},
+  {keys:["腰腹","侧腰","腹斜肌","水桶腰"], list:["俄罗斯转体","登山者","仰卧举腿"]},
+  {keys:["马甲线","腹","腹肌","核心","小腹","肚子","abs","core"], list:["卷腹","仰卧举腿","平板支撑","俄罗斯转体","登山者"]},
+];
+function partMatch(term){
+  const t=term.toLowerCase().trim();
+  if(!t)return null;
+  for(const p of PARTS){if(p.keys.some(k=>k.toLowerCase()===t))return p;}          // 精确匹配
+  let best=null,len=0;
+  for(const p of PARTS)for(const k of p.keys){const kl=k.toLowerCase();if(t.includes(kl)&&kl.length>len){best=p;len=kl.length;}}  // 输入含部位词，取最具体
+  if(best)return best;
+  for(const p of PARTS){if(p.keys.some(k=>k.toLowerCase().includes(t)))return p;}  // 部位词含输入（片段）
+  return null;
+}
+
 function doSearch(){
   const term=document.getElementById("searchInput").value.trim();
   const hint=document.getElementById("searchHint");
   hint.className="search-hint";
+  if(!term){renderResults(KB.slice(),[]);hint.textContent=`动作库共 ${KB.length} 个动作`;return;}
+  const part=partMatch(term);
+  if(part){
+    const recs=part.list.map(n=>KB.find(k=>k.name===n)).filter(Boolean).map((k,i)=>Object.assign({},k,{_rec:i+1}));
+    const recNames=new Set(recs.map(r=>r.name));
+    const others=localSearch(term).filter(k=>!recNames.has(k.name));
+    renderResults(recs.concat(others),[]);
+    let msg=`⭐ 练「${term}」最高效的动作，已按推荐顺序排列`;
+    if(others.length)msg+=`；另有 ${others.length} 个相关动作`;
+    hint.textContent=msg;
+    return;
+  }
   const local=localSearch(term);
   renderResults(local,[]);
-  if(!term){hint.textContent=`动作库共 ${KB.length} 个动作`;return;}
-  hint.textContent=local.length?`找到 ${local.length} 个动作`:"没有匹配的动作，换个关键词试试～";
+  hint.textContent=local.length?`找到 ${local.length} 个动作`:"没有匹配的动作，换个部位或动作名试试～";
 }
 
 
@@ -850,13 +894,14 @@ function renderResults(local,extra){
       weight:d.weight||tips.weight,
       notes:d.notes||tips.notes,
       img:d._img||d.img||null};
-    return `<div class="res">
+    const badge=d._rec?`<span class="src rec">⭐ 高效 #${d._rec}</span>`:`<span class="src">动作库</span>`;
+    return `<div class="res${d._rec?' isrec':''}">
       <div class="ricon">${media}</div>
       <div class="rbody">
         <div class="rtop">
           <h4>${esc(d.name)}</h4>
           <span class="zb">${zoneLabel(zone)}</span>
-          <span class="src ${online?'online':''}">${online?'wger 在线':'本地库'}</span>
+          ${badge}
         </div>
         <div class="rt">📍 ${esc(data.target)}</div>
         <div class="rw">🏋️ 建议重量：${esc(data.weight)}</div>
